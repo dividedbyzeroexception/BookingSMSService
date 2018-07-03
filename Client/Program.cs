@@ -543,8 +543,6 @@ namespace Client
         public static EntityState InsertOrUpdate(Appointment appointment)
         {
 
-            // Convert.ToBase64String(md5.ComputeHash(Encoding.UTF8.GetBytes(x.Id + x.Start + x.End)))
-
             if (db.Appointment.Any(a => a.Id == appointment.Id) &&
                 db.Appointment.Any(a => a.md5 == appointment.md5))
             {
@@ -570,11 +568,6 @@ namespace Client
                 db.SaveChanges();
                 return EntityState.Added;
             }
-
-            //context.Entry(appointment).State = String.IsNullOrEmpty(appointment.Id) ? EntityState.Added : EntityState.Modified;
-
-            
-
         }
 
     }
