@@ -16,13 +16,14 @@ namespace Client
     {
         public int Id { get; set; }
         public Nullable<System.DateTime> sentDate { get; set; }
-        public Nullable<int> messageId { get; set; }
+        public string smsTemplate { get; set; }
         public string message { get; set; }
         public string appointmentId { get; set; }
         public string recipientPhone { get; set; }
         public Nullable<int> repeatCount { get; set; }
         public string serviceId { get; set; }
-        public string sentState { get; set; }
+        public Nullable<bool> smsIsSent { get; set; }
+        public string sentResult { get; set; }
     
         public virtual Appointment Appointment { get; set; }
     }

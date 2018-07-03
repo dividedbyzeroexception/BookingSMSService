@@ -33,6 +33,15 @@ namespace Client
         private static Uri _ApplicationRedirectUri =    new Uri(ConfigurationManager.AppSettings["ApplicationRedirectUri"]);
         private static AuthenticationResult authenticationResult;
         private static AuthenticationContext authenticationContext;
+        // private static int _SMSReminderMaxCount =       Convert.ToInt32(ConfigurationManager.AppSettings["SMSReminderMaxCount"]);
+        //private static string strSMSReminder1TimeSpanBefore =ConfigurationManager.AppSettings["SMSReminder1TimeSpanBefore"];
+        //private static string strSMSReminder2TimeSpanBefore =ConfigurationManager.AppSettings["SMSReminder2TimeSpanBefore"];
+        //private static string strSMSReminder3TimeSpanBefore =ConfigurationManager.AppSettings["SMSReminder3TimeSpanBefore"];
+        private static TimeSpan SMSReminder1TimeSpanBefore = TimeSpan.Parse(ConfigurationManager.AppSettings["SMSReminder1TimeSpanBefore"]);
+        private static TimeSpan SMSReminder2TimeSpanBefore = TimeSpan.Parse(ConfigurationManager.AppSettings["SMSReminder2TimeSpanBefore"]);
+        private static TimeSpan SMSReminder3TimeSpanBefore = TimeSpan.Parse(ConfigurationManager.AppSettings["SMSReminder3TimeSpanBefore"]);
+
+
 
         private static string _SMSSenderFrom =          ConfigurationManager.AppSettings["SMSSenderFrom"];
         private static string _SMSServiceUserName =     ConfigurationManager.AppSettings["SMSServiceUserName"];
@@ -85,6 +94,8 @@ namespace Client
 
             ViaNettSMS viaNettSMS = new ViaNettSMS(_SMSServiceUserName, _SMSServicePassword);
 
+
+           
 
 
             try
@@ -180,7 +191,8 @@ namespace Client
                 MD5 md5 = MD5.Create();
 
                 //var appointments = mybusiness.Appointments;
-                var oDataAppointments = mybusiness.Appointments.ToArray().Where(a => System.DateTime.Parse(a.Start.DateTime) >= DateTime.Parse("10.06.2018"));
+                //var oDataAppointments = mybusiness.Appointments.ToArray().Where(a => System.DateTime.Parse(a.Start.DateTime) >= DateTime.Parse("10.07.2018"));
+                var oDataAppointments = mybusiness.Appointments.ToArray().Where(a => System.DateTime.Parse(a.Start.DateTime) >= DateTime.Now);
 
                 db = new BookingEntities();
                 /*
@@ -234,7 +246,7 @@ namespace Client
                         Start = System.DateTime.Parse(oDataAppointment.Start.DateTime).ToLocalTime(),
                         End = System.DateTime.Parse(oDataAppointment.End.DateTime).ToLocalTime(),
                         serviceId = oDataAppointment.ServiceId,
-                        serviceName = oDataAppointment.ServiceName,
+                        serviceName = oDataAppointment.ServiceName.ToLower(),
                         json = JsonConvert.SerializeObject(oDataAppointment),
                         md5 = Convert.ToBase64String(md5.ComputeHash(Encoding.UTF8.GetBytes(oDataAppointment.Id + oDataAppointment.Start.DateTime.ToString() + oDataAppointment.End.DateTime.ToString())))
                     };
@@ -254,8 +266,6 @@ namespace Client
                         case EntityState.Added:
                             // Ny Avtale
                             SendSMS(viaNettSMS, _business, _list, SMSTemplate.SMSConfirmation);
-                           
-
                             break;
                         case EntityState.Deleted:
                             break;
@@ -275,7 +285,7 @@ namespace Client
                 List<string> odataIDs = oDataAppointments.Select(x => x.Id).ToList<string>();
 
                 var deleteAppointments = from a in db.Appointment
-                                         where !odataIDs.Contains(a.Id)
+                                         where !odataIDs.Contains(a.Id) && a.Start > DateTime.Now
                                          select a;
 
                 var bappointments = new List<BookingAppointment>();
@@ -296,7 +306,7 @@ namespace Client
                 //db.Appointment.RemoveRange(deleteAppointments);
                 db.SaveChanges();
 
-                Console.ReadLine();
+               // Console.ReadLine();
                 /*
                                 foreach (var appointment in oDataAppointments)
                                 {
@@ -325,11 +335,108 @@ namespace Client
 
                 md5.Dispose();
 
+                //DateTime test = DateTime.Now.Add(SMSReminder1TimeSpanBefore).Date;
+
+                //var reminder1Appointments = from a in db.Appointment
+                //                            where a.SMSLog.Where(s => s.smsTemplate == SMSTemplate.SMSReminder1.ToString()).Count() < 1
+                //                            && a.Start < DateTime.Now.Add(SMSReminder1TimeSpanBefore).Date
+                //                            select a;
+                //var reminder2Appointments = from a in db.Appointment
+                //                            where a.SMSLog.Where(s => s.smsTemplate == SMSTemplate.SMSReminder2.ToString()).Count() < 1
+                //                            && a.Start < DateTime.Now.Add(SMSReminder2TimeSpanBefore).Date
+                //                            select a;
+                //var reminder3Appointments = from a in db.Appointment
+                //                            where a.SMSLog.Where(s => s.smsTemplate == SMSTemplate.SMSReminder3.ToString()).Count() < 1
+                //                            && a.Start < DateTime.Now.Add(SMSReminder3TimeSpanBefore).Date
+                //                            select a;
+
+                //var reminderAppointments =  from a in db.Appointment
+                //                            where 
+                //                                (a.SMSLog.Where(s => s.smsTemplate == SMSTemplate.SMSReminder1.ToString()).Count() < 1
+                //                                && a.Start < DateTime.Now.Add(SMSReminder1TimeSpanBefore).Date) 
+                //                            || (a.SMSLog.Where(s => s.smsTemplate == SMSTemplate.SMSReminder2.ToString()).Count() < 1
+                //                                && a.Start < DateTime.Now.Add(SMSReminder2TimeSpanBefore).Date) 
+                //                            || (a.SMSLog.Where(s => s.smsTemplate == SMSTemplate.SMSReminder3.ToString()).Count() < 1
+                //                                && a.Start < DateTime.Now.Add(SMSReminder3TimeSpanBefore).Date)
+                //                            select a;
+
+
                 while (true)
                 {
                     //Console.WriteLine(graphService.BookingBusinesses.FirstOrDefault().Id);
                     ///System.Threading.Thread.Sleep(3000);
-                    //Console.WriteLine(authenticationResult.ExpiresOn.ToLocalTime().ToString());    
+                    //Console.WriteLine(authenticationResult.ExpiresOn.ToLocalTime().ToString()); 
+
+                    DateTime rm1Date = DateTime.Now.Add(SMSReminder1TimeSpanBefore).Date;
+                    DateTime rm2Date = DateTime.Now.Add(SMSReminder2TimeSpanBefore).Date;
+                    DateTime rm3Date = DateTime.Now.Add(SMSReminder3TimeSpanBefore).Date;
+
+                    var reminder1Appointments = from a in db.Appointment
+                                                where a.SMSLog.Where(s => s.smsTemplate == SMSTemplate.SMSReminder1.ToString() && s.smsIsSent == true).Count() < 1
+                                                && a.Start < rm1Date
+                                                select new BookingAppointment {
+                                                     Id = a.Id
+                                                    , CustomerName = a.customerName
+                                                    , CustomerPhone = a.customerPhone
+                                                    , ServiceName = a.serviceName
+                                                    , Start = new DateTimeTimeZone { DateTime = a.Start.ToString(), TimeZone = "UTC" }
+                                                    ,CustomerEmailAddress = a.customerEmailAddress
+                                                    ,End = new DateTimeTimeZone { DateTime = a.Start.ToString(), TimeZone = "UTC" }
+                                                    ,Duration = new TimeSpan(1,0,0)
+                                                    ,ServiceLocation = new Location {
+                                                                                     Address = new PhysicalAddress()
+                                                                                    ,Coordinates = new OutlookGeoCoordinates()
+                                                    }
+                                                };
+
+                    var reminder2Appointments = from a in db.Appointment
+                                                where a.SMSLog.Where(s => s.smsTemplate == SMSTemplate.SMSReminder2.ToString()).Count() < 1
+                                                && a.Start < rm2Date
+                                                select new BookingAppointment {
+                                                     Id = a.Id
+                                                    , CustomerName = a.customerName
+                                                    , CustomerPhone = a.customerPhone
+                                                    , ServiceName = a.serviceName
+                                                    , Start = new DateTimeTimeZone { DateTime = a.Start.ToString(), TimeZone = "UTC" }
+                                                    ,CustomerEmailAddress = a.customerEmailAddress
+                                                    ,End = new DateTimeTimeZone { DateTime = a.Start.ToString(), TimeZone = "UTC" }
+                                                    ,Duration = new TimeSpan(1,0,0)
+                                                    ,ServiceLocation = new Location {
+                                                                                     Address = new PhysicalAddress()
+                                                                                    ,Coordinates = new OutlookGeoCoordinates()
+                                                    }
+                                                };
+
+                    var reminder3Appointments = from a in db.Appointment
+                                                where a.SMSLog.Where(s => s.smsTemplate == SMSTemplate.SMSReminder3.ToString()).Count() < 1
+                                                && a.Start < rm3Date
+                                                select new BookingAppointment {
+                                                     Id = a.Id
+                                                    , CustomerName = a.customerName
+                                                    , CustomerPhone = a.customerPhone
+                                                    , ServiceName = a.serviceName
+                                                    , Start = new DateTimeTimeZone { DateTime = a.Start.ToString(), TimeZone = "UTC" }
+                                                    ,CustomerEmailAddress = a.customerEmailAddress
+                                                    ,End = new DateTimeTimeZone { DateTime = a.Start.ToString(), TimeZone = "UTC" }
+                                                    ,Duration = new TimeSpan(1,0,0)
+                                                    ,ServiceLocation = new Location {
+                                                                                     Address = new PhysicalAddress()
+                                                                                    ,Coordinates = new OutlookGeoCoordinates()
+                                                    }
+                                                };
+
+
+
+                    SendSMS(viaNettSMS, _business, reminder1Appointments, SMSTemplate.SMSReminder1);
+                    SendSMS(viaNettSMS, _business, reminder2Appointments, SMSTemplate.SMSReminder2);
+                    SendSMS(viaNettSMS, _business, reminder3Appointments, SMSTemplate.SMSReminder3);
+
+
+
+
+
+
+
                     System.Threading.Thread.Sleep(3000);
 
                 }
@@ -492,14 +599,43 @@ namespace Client
                     result = viaNettSMS.SendSMS(_SMSSenderFrom, appointment.CustomerPhone, message);
                     //result = viaNettSMS.SendSMS(_SMSSenderFrom, "40453626", message);
 
+
                     // Show Send SMS response
                     if (result.Success)
                     {
                         Debug.WriteLine("Message successfully sent");
+
+                        using (BookingEntities context = new BookingEntities())
+                        {
+                            context.SMSLog.Add(new SMSLog {
+                                appointmentId = appointment.Id
+                               ,message = message
+                               ,recipientPhone = appointment.CustomerPhone
+                               ,sentDate = DateTime.Now
+                               ,smsIsSent = true
+                               ,sentResult = "OK"
+                               ,smsTemplate = sMSTemplate.ToString()                                
+                            });
+                            context.SaveChanges();
+                        }                       
                     }
                     else
                     {
-                        Debug.WriteLine("Received error: " + result.ErrorCode + " " + result.ErrorMessage);
+                        using (BookingEntities context = new BookingEntities())
+                        {
+                            context.SMSLog.Add(new SMSLog {
+                                appointmentId = appointment.Id
+                               ,message = message
+                               ,recipientPhone = appointment.CustomerPhone
+                               ,sentDate = DateTime.Now
+                               ,smsIsSent = false
+                               ,sentResult = $"Received error: {result.ErrorCode} {result.ErrorMessage}"
+                               ,smsTemplate = sMSTemplate.ToString()                           
+                                
+                            });
+                            context.SaveChanges();
+                        }
+                        Debug.WriteLine($"Received error: {result.ErrorCode} {result.ErrorMessage}");
                     }
                 }
                 catch (System.Net.WebException ex)
@@ -517,36 +653,35 @@ namespace Client
             string messageFooter = ConfigurationManager.AppSettings["SMSFooter"];
             string message = (smsTemplateBody + messageFooter);
 
-            message = message
-                                .Replace("%BookingAppointment.CustomerName%", appointment.CustomerName)
-                                .Replace("%BookingAppointment.CustomerEmailAddress%", appointment.CustomerEmailAddress)
-                                .Replace("%BookingAppointment.CustomerPhone%", appointment.CustomerPhone)
-                                .Replace("%BookingAppointment.ServiceName%", appointment.ServiceName)
-                                .Replace("%BookingAppointment.Start%", System.DateTime.Parse(appointment.Start.DateTime).ToLocalTime().ToString())
-                                .Replace("%BookingAppointment.End%", System.DateTime.Parse(appointment.End.DateTime).ToLocalTime().ToString())
-                                .Replace("%BookingAppointment.Duration%", appointment.Duration.Minutes.ToString())
-                                .Replace("%BookingAppointment.ServiceLocation.DisplayName%", appointment.ServiceLocation.DisplayName)
-                                .Replace("%BookingAppointment.ServiceLocation.LocationEmailAddress%", appointment.ServiceLocation.LocationEmailAddress)
-                                .Replace("%BookingAppointment.ServiceLocation.Address.Street%", appointment.ServiceLocation.Address.Street)
-                                .Replace("%BookingAppointment.ServiceLocation.Address.City%", appointment.ServiceLocation.Address.City)
-                                .Replace("%BookingAppointment.ServiceLocation.Address.State%", appointment.ServiceLocation.Address.State)
-                                .Replace("%BookingAppointment.ServiceLocation.Address.CountryOrRegion%", appointment.ServiceLocation.Address.CountryOrRegion)
-                                .Replace("%BookingAppointment.ServiceLocation.Address.PostalCode%", appointment.ServiceLocation.Address.PostalCode)
-                                .Replace("%BookingAppointment.ServiceLocation.Coordinates.Altitude%", appointment.ServiceLocation.Coordinates.Altitude.ToString())
-                                .Replace("%BookingAppointment.ServiceLocation.Coordinates.Latitude%", appointment.ServiceLocation.Coordinates.Latitude.ToString())
-                                .Replace("%BookingAppointment.ServiceLocation.Coordinates.Longitude%", appointment.ServiceLocation.Coordinates.Longitude.ToString())
-                                .Replace("%BookingAppointment.ServiceLocation.Coordinates.Accuracy%", appointment.ServiceLocation.Coordinates.Accuracy.ToString())
-                                .Replace("%BookingAppointment.ServiceLocation.Coordinates.AltitudeAccuracy%", appointment.ServiceLocation.Coordinates.AltitudeAccuracy.ToString())
-                                .Replace("%BookingBusiness.Address.City%", _business.Address.City)
-                                .Replace("%BookingBusiness.Address.Street%", _business.Address.Street)
-                                .Replace("%BookingBusiness.Address.PostalCode%", _business.Address.PostalCode)
-                                .Replace("%BookingBusiness.Address.State%", _business.Address.State)
-                                .Replace("%BookingBusiness.Address.CountryOrRegion%", _business.Address.CountryOrRegion)
-                                .Replace("%BookingBusiness.DisplayName%", _business.DisplayName)
-                                .Replace("%BookingBusiness.Email%", _business.Email)
-                                .Replace("%BookingBusiness.Phone%", _business.Phone)
-                                .Replace("%BookingBusiness.PublicUrl%", _business.PublicUrl)
-                                .Replace("%BookingBusiness.WebSiteUrl%", _business.WebSiteUrl);
+            message = message.Replace("%BookingAppointment.CustomerName%", appointment.CustomerName);
+            message = message.Replace("%BookingAppointment.CustomerEmailAddress%", appointment.CustomerEmailAddress);
+            message = message.Replace("%BookingAppointment.CustomerPhone%", appointment.CustomerPhone);
+            message = message.Replace("%BookingAppointment.ServiceName%", appointment.ServiceName.ToLower());
+            message = message.Replace("%BookingAppointment.Start%", System.DateTime.Parse(appointment.Start.DateTime).ToLocalTime().ToString("dd.MM.yyyy HH:mm"));
+            message = message.Replace("%BookingAppointment.End%", System.DateTime.Parse(appointment.End.DateTime).ToLocalTime().ToString("dd.MM.yyyy HH:mm"));
+            message = message.Replace("%BookingAppointment.Duration%", appointment.Duration.Minutes.ToString());
+            message = message.Replace("%BookingAppointment.ServiceLocation.DisplayName%", appointment.ServiceLocation.DisplayName);
+            message = message.Replace("%BookingAppointment.ServiceLocation.LocationEmailAddress%", appointment.ServiceLocation.LocationEmailAddress);
+            message = message.Replace("%BookingAppointment.ServiceLocation.Address.Street%", appointment.ServiceLocation.Address.Street ?? "");
+            message = message.Replace("%BookingAppointment.ServiceLocation.Address.City%", appointment.ServiceLocation.Address.City ?? "");
+            message = message.Replace("%BookingAppointment.ServiceLocation.Address.State%", appointment.ServiceLocation.Address.State ?? "");
+            message = message.Replace("%BookingAppointment.ServiceLocation.Address.CountryOrRegion%", appointment.ServiceLocation.Address.CountryOrRegion ?? "");
+            message = message.Replace("%BookingAppointment.ServiceLocation.Address.PostalCode%", appointment.ServiceLocation.Address.PostalCode ?? "");
+            message = message.Replace("%BookingAppointment.ServiceLocation.Coordinates.Altitude%", appointment.ServiceLocation.Coordinates.Altitude.ToString() ?? "");
+            message = message.Replace("%BookingAppointment.ServiceLocation.Coordinates.Latitude%", appointment.ServiceLocation.Coordinates.Latitude.ToString() ?? "");
+            message = message.Replace("%BookingAppointment.ServiceLocation.Coordinates.Longitude%", appointment.ServiceLocation.Coordinates.Longitude.ToString() ?? "");
+            message = message.Replace("%BookingAppointment.ServiceLocation.Coordinates.Accuracy%", appointment.ServiceLocation.Coordinates.Accuracy.ToString() ?? "");
+            message = message.Replace("%BookingAppointment.ServiceLocation.Coordinates.AltitudeAccuracy%", appointment.ServiceLocation.Coordinates.AltitudeAccuracy.ToString() ?? "");
+            message = message.Replace("%BookingBusiness.Address.City%", _business.Address.City);
+            message = message.Replace("%BookingBusiness.Address.Street%", _business.Address.Street);
+            message = message.Replace("%BookingBusiness.Address.PostalCode%", _business.Address.PostalCode);
+            message = message.Replace("%BookingBusiness.Address.State%", _business.Address.State);
+            message = message.Replace("%BookingBusiness.Address.CountryOrRegion%", _business.Address.CountryOrRegion);
+            message = message.Replace("%BookingBusiness.DisplayName%", _business.DisplayName);
+            message = message.Replace("%BookingBusiness.Email%", _business.Email);
+            message = message.Replace("%BookingBusiness.Phone%", _business.Phone);
+            message = message.Replace("%BookingBusiness.PublicUrl%", _business.PublicUrl);
+            message = message.Replace("%BookingBusiness.WebSiteUrl%", _business.WebSiteUrl);
 
            
             message = message.Replace("\\n", Environment.NewLine);
@@ -576,6 +711,7 @@ namespace Client
             }
             else
             {
+                appointment.appointmentCreatedDate = DateTime.Now;
                 appointment.appointmentCreatedDate = DateTime.Now;
                 appointment.appointmentIsActive = true;
                 db.Appointment.Attach(appointment);

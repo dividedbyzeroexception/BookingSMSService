@@ -6,8 +6,8 @@
     <edmx:Diagrams>
       <Diagram DiagramId="6caf3090025b40e7894648f626041711" Name="Diagram1">
         <EntityTypeShape EntityType="BookingsModel.Appointment" Width="1.5" PointX="0.75" PointY="1" IsExpanded="true" />
-        <EntityTypeShape EntityType="BookingsModel.SMSLog" Width="1.5" PointX="3" PointY="1.5" IsExpanded="true" />
-        <AssociationConnector Association="BookingsModel.FK_SMSLog_ToTable" ManuallyRouted="false" />
+        <EntityTypeShape EntityType="BookingsModel.SMSLog" Width="1.5" PointX="3" PointY="1.625" />
+        <AssociationConnector Association="BookingsModel.FK_SMSLog_Appointment" />
       </Diagram>
     </edmx:Diagrams>
   </edmx:Designer>

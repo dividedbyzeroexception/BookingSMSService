@@ -8,7 +8,9 @@ namespace Client.Struct
 {
     public enum SMSTemplate
     {
-        SMSReminder,
+        SMSReminder1,
+        SMSReminder2,
+        SMSReminder3,
         SMSCancellation,
         SMSConfirmation,
         SMSUpdate

@@ -30,15 +30,16 @@
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="int" Nullable="false" />
+          <Property Name="Id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="sentDate" Type="datetime2" Precision="7" />
-          <Property Name="messageId" Type="int" />
+          <Property Name="smsTemplate" Type="nvarchar" MaxLength="50" />
           <Property Name="message" Type="nvarchar(max)" />
           <Property Name="appointmentId" Type="nvarchar" MaxLength="255" />
           <Property Name="recipientPhone" Type="nvarchar" MaxLength="20" />
           <Property Name="repeatCount" Type="int" />
           <Property Name="serviceId" Type="nvarchar" MaxLength="255" />
-          <Property Name="sentState" Type="nvarchar" MaxLength="255" />
+          <Property Name="smsIsSent" Type="bit" />
+          <Property Name="sentResult" Type="nvarchar" MaxLength="255" />
         </EntityType>
         <Association Name="FK_SMSLog_Appointment">
           <End Role="Appointment" Type="Self.Appointment" Multiplicity="0..1" />
@@ -81,29 +82,38 @@
           <Property Name="serviceName" Type="String" MaxLength="255" FixedLength="false" Unicode="true" />
           <Property Name="staffMemberIds" Type="String" MaxLength="36" FixedLength="false" Unicode="true" />
           <Property Name="customerId" Type="String" MaxLength="36" FixedLength="false" Unicode="true" />
-          <NavigationProperty Name="SMSLog" Relationship="Self.FK_SMSLog_ToTable" FromRole="Appointment" ToRole="SMSLog" />
           <Property Name="appointmentIsActive" Type="Boolean" Nullable="false" />
           <Property Name="appointmentChangedDate" Type="DateTime" Nullable="false" Precision="7" />
           <Property Name="appointmentCreatedDate" Type="DateTime" Nullable="false" Precision="7" />
+          <NavigationProperty Name="SMSLog" Relationship="BookingsModel.FK_SMSLog_Appointment" FromRole="Appointment" ToRole="SMSLog" />
         </EntityType>
+        <EntityContainer Name="BookingEntities" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="Appointment" EntityType="Self.Appointment" />
+          <EntitySet Name="SMSLog" EntityType="BookingsModel.SMSLog" />
+          <AssociationSet Name="FK_SMSLog_Appointment" Association="BookingsModel.FK_SMSLog_Appointment">
+            <End Role="Appointment" EntitySet="Appointment" />
+            <End Role="SMSLog" EntitySet="SMSLog" />
+          </AssociationSet>
+        </EntityContainer>
         <EntityType Name="SMSLog">
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="Int32" Nullable="false" />
+          <Property Name="Id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
           <Property Name="sentDate" Type="DateTime" Precision="7" />
-          <Property Name="messageId" Type="Int32" />
+          <Property Name="smsTemplate" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
           <Property Name="message" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
           <Property Name="appointmentId" Type="String" MaxLength="255" FixedLength="false" Unicode="true" />
           <Property Name="recipientPhone" Type="String" MaxLength="20" FixedLength="false" Unicode="true" />
           <Property Name="repeatCount" Type="Int32" />
           <Property Name="serviceId" Type="String" MaxLength="255" FixedLength="false" Unicode="true" />
-          <NavigationProperty Name="Appointment" Relationship="Self.FK_SMSLog_ToTable" FromRole="SMSLog" ToRole="Appointment" />
-          <Property Name="sentState" Type="String" MaxLength="255" FixedLength="false" Unicode="true" />
+          <Property Name="smsIsSent" Type="Boolean" />
+          <Property Name="sentResult" Type="String" MaxLength="255" FixedLength="false" Unicode="true" />
+          <NavigationProperty Name="Appointment" Relationship="BookingsModel.FK_SMSLog_Appointment" FromRole="SMSLog" ToRole="Appointment" />
         </EntityType>
-        <Association Name="FK_SMSLog_ToTable">
-          <End Role="Appointment" Type="Self.Appointment" Multiplicity="0..1" />
-          <End Role="SMSLog" Type="Self.SMSLog" Multiplicity="*" />
+        <Association Name="FK_SMSLog_Appointment">
+          <End Type="BookingsModel.Appointment" Role="Appointment" Multiplicity="0..1" />
+          <End Type="BookingsModel.SMSLog" Role="SMSLog" Multiplicity="*" />
           <ReferentialConstraint>
             <Principal Role="Appointment">
               <PropertyRef Name="Id" />
@@ -113,14 +123,6 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
-        <EntityContainer Name="BookingEntities" annotation:LazyLoadingEnabled="true">
-          <EntitySet Name="Appointment" EntityType="Self.Appointment" />
-          <EntitySet Name="SMSLog" EntityType="Self.SMSLog" />
-          <AssociationSet Name="FK_SMSLog_ToTable" Association="Self.FK_SMSLog_ToTable">
-            <End Role="Appointment" EntitySet="Appointment" />
-            <End Role="SMSLog" EntitySet="SMSLog" />
-          </AssociationSet>
-        </EntityContainer>
       </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
@@ -152,15 +154,16 @@
           <EntitySetMapping Name="SMSLog">
             <EntityTypeMapping TypeName="BookingsModel.SMSLog">
               <MappingFragment StoreEntitySet="SMSLog">
-                <ScalarProperty Name="sentState" ColumnName="sentState" />
-                <ScalarProperty Name="Id" ColumnName="Id" />
-                <ScalarProperty Name="sentDate" ColumnName="sentDate" />
-                <ScalarProperty Name="messageId" ColumnName="messageId" />
-                <ScalarProperty Name="message" ColumnName="message" />
-                <ScalarProperty Name="appointmentId" ColumnName="appointmentId" />
-                <ScalarProperty Name="recipientPhone" ColumnName="recipientPhone" />
-                <ScalarProperty Name="repeatCount" ColumnName="repeatCount" />
+                <ScalarProperty Name="sentResult" ColumnName="sentResult" />
+                <ScalarProperty Name="smsIsSent" ColumnName="smsIsSent" />
                 <ScalarProperty Name="serviceId" ColumnName="serviceId" />
+                <ScalarProperty Name="repeatCount" ColumnName="repeatCount" />
+                <ScalarProperty Name="recipientPhone" ColumnName="recipientPhone" />
+                <ScalarProperty Name="appointmentId" ColumnName="appointmentId" />
+                <ScalarProperty Name="message" ColumnName="message" />
+                <ScalarProperty Name="smsTemplate" ColumnName="smsTemplate" />
+                <ScalarProperty Name="sentDate" ColumnName="sentDate" />
+                <ScalarProperty Name="Id" ColumnName="Id" />
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
