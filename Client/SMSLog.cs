@@ -22,6 +22,7 @@ namespace Client
         public string recipientPhone { get; set; }
         public Nullable<int> repeatCount { get; set; }
         public string serviceId { get; set; }
+        public string sentState { get; set; }
     
         public virtual Appointment Appointment { get; set; }
     }

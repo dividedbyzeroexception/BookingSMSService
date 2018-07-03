@@ -180,7 +180,7 @@ namespace Client
                 MD5 md5 = MD5.Create();
 
                 //var appointments = mybusiness.Appointments;
-                var oDataAppointments = mybusiness.Appointments.ToArray().Where(a => System.DateTime.Parse(a.Start.DateTime) >= DateTime.Parse("21.06.2018"));
+                var oDataAppointments = mybusiness.Appointments.ToArray().Where(a => System.DateTime.Parse(a.Start.DateTime) >= DateTime.Parse("10.06.2018"));
 
                 db = new BookingEntities();
                 /*
@@ -239,6 +239,9 @@ namespace Client
                         md5 = Convert.ToBase64String(md5.ComputeHash(Encoding.UTF8.GetBytes(oDataAppointment.Id + oDataAppointment.Start.DateTime.ToString() + oDataAppointment.End.DateTime.ToString())))
                     };
 
+                   // var mineappoint = db.Appointment.Where(x => x.appointmentIsActive == true);
+
+
                     List<BookingAppointment> _list = new List<BookingAppointment>();
                     _list.Add(oDataAppointment);
 
@@ -251,6 +254,8 @@ namespace Client
                         case EntityState.Added:
                             // Ny Avtale
                             SendSMS(viaNettSMS, _business, _list, SMSTemplate.SMSConfirmation);
+                           
+
                             break;
                         case EntityState.Deleted:
                             break;
@@ -263,6 +268,10 @@ namespace Client
                     }
                 }
 
+                
+
+
+
                 List<string> odataIDs = oDataAppointments.Select(x => x.Id).ToList<string>();
 
                 var deleteAppointments = from a in db.Appointment
@@ -270,18 +279,21 @@ namespace Client
                                          select a;
 
                 var bappointments = new List<BookingAppointment>();
-                
+
+                /* Send SMS for avlyste Avtaler*/
                 foreach (var appoint in deleteAppointments)
                 {
+                    appoint.appointmentIsActive = false;
+                    appoint.appointmentChangedDate = DateTime.Now;                   
+
                     var bappoint = JsonConvert.DeserializeObject<BookingAppointment>(appoint.json);
                     bappointments.Add(bappoint);
                 }
 
                 SendSMS(viaNettSMS, _business, bappointments, SMSTemplate.SMSCancellation);
 
-                var delList = deleteAppointments.ToList();
-
-                db.Appointment.RemoveRange(deleteAppointments);
+                //var delList = deleteAppointments.ToList();
+                //db.Appointment.RemoveRange(deleteAppointments);
                 db.SaveChanges();
 
                 Console.ReadLine();
@@ -548,6 +560,7 @@ namespace Client
             {
                 db.Appointment.Attach(appointment);
                 db.Entry(appointment).State = EntityState.Unchanged;
+
                 db.SaveChanges();
                 return EntityState.Unchanged;
             }
@@ -555,6 +568,7 @@ namespace Client
             if (db.Appointment.Any(a => a.Id == appointment.Id) &&
                 db.Appointment.Any(a => a.md5 != appointment.md5))
             {
+                appointment.appointmentChangedDate = DateTime.Now;
                 db.Appointment.Attach(appointment);
                 db.Entry(appointment).State = EntityState.Modified;
                 db.SaveChanges();
@@ -562,6 +576,8 @@ namespace Client
             }
             else
             {
+                appointment.appointmentCreatedDate = DateTime.Now;
+                appointment.appointmentIsActive = true;
                 db.Appointment.Attach(appointment);
                 db.Entry(appointment).State = EntityState.Added;
                 db.Appointment.Add(appointment);
