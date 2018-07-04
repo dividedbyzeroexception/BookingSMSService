@@ -108,7 +108,7 @@ namespace Client
             }
 
             //Sett denne til max
-            graphService.MaxPageSize = 10;
+            graphService.MaxPageSize = 20;
                 
             var mybusiness = graphService.BookingBusinesses.ByKey(_BookingBusinessesID);
 
@@ -145,7 +145,7 @@ namespace Client
                     Console.WriteLine(DateTime.Now);
                     //Retrieve BookingAppointments from graphservice
                     var oDataAppointments = mybusiness.Appointments.ToArray().Where(a => System.DateTime.Parse(a.Start.DateTime) >= DateTime.Now);
-                    
+
                     //Create Entities from BookingAppointment collection
                     //Update and Add Entities
                     //Send SMS for New and Changed Appointments
