@@ -131,25 +131,100 @@ namespace Client
 
 
             MD5 md5 = MD5.Create();
-           // db = new BookingEntities();
+            // db = new BookingEntities();
             /*
                 Main service loop
                 */
+
+            int exceptionCount = 0;
+
             while (true)
             {
+                System.Threading.Thread.Sleep(60000);
+
                 using (var db = new BookingEntities())
                 {
-
                 
                     Console.WriteLine();
                     Console.WriteLine(DateTime.Now);
                     //Retrieve BookingAppointments from graphservice
-                    var oDataAppointments = mybusiness.Appointments.ToArray().Where(a => System.DateTime.Parse(a.Start.DateTime) >= DateTime.Now);
+                    //var oDataAppointments = mybusiness.Appointments.ToArray().Where(a => System.DateTime.Parse(a.Start.DateTime) >= DateTime.Now);
+
+
+                    try
+                    {
+                        var oldAppointments = mybusiness.Appointments
+                                        .Where(a => a.CustomerEmailAddress != "expired").ToArray()
+                                            .Where(a => System.DateTime.Parse(a.Start.DateTime) < DateTime.Now);
+
+
+                        foreach (var item in oldAppointments)
+                        {
+                            Console.WriteLine($"{ item.Start.DateTime }");
+                            var itemSingle = graphService.BookingBusinesses.ByKey(_BookingBusinessesID).Appointments.ByKey(item.Id);
+                            var _item = itemSingle.PatchEntityWithChangeTracking();
+                            _item.CustomerEmailAddress = "expired";
+                            graphService.UpdateObject(_item);
+                            graphService.SaveChanges(SaveChangesOptions.PostOnlySetProperties);
+                        }
+
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"ExceptionCount: {exceptionCount}  , exception: {e.InnerException.ToString()}");
+                        exceptionCount++;
+                        continue;
+                    }
+
+
+                    //   var context = new DefaultContainer(new Uri("http://services.odata.org/v4/(S(lqbvtwide0ngdev54adgc0lu))/TripPinServiceRW/"));
+
+                    //   var person = context.People.ByKey(userName: "russellwhyte").GetValue(); // get an entity
+                    //   person.FirstName = "Ross"; // change its property
+                    //   context.UpdateObject(person); // create an update request
+
+                    //   context.SaveChanges(); // send the request
+
+                    /*
+                    var testAppointmentsingle = graphService.BookingBusinesses.ByKey(_BookingBusinessesID).Appointments.ByKey("AAMkADBjYzI5MGZlLTFmMzctNDJhOS1hM2VkLTM0ODY2OWY4ZjYwYgBGAAAAAABI76yGzIqkTITnTV2sgs0XBwAB7TEfJhyqT4eOsSBlsdfcAAAAAAENAAAB7TEfJhyqT4eOsSBlsdfcAAAAABTzAAA=");
+                    var testAppointment = testAppointmentsingle.PatchEntityWithChangeTracking();
+                    testAppointment.CustomerEmailAddress = "expired";
+                    graphService.UpdateObject(testAppointment);
+                    graphService.SaveChanges(SaveChangesOptions.PostOnlySetProperties);
+                    */
+
+                    List<BookingAppointment> bookingAppointments = new List<BookingAppointment>();
+                    try
+                    {                        
+                        bool endOfAppointments = false;
+                        int skip = 0;
+                        int top = 3;
+                        while (!endOfAppointments)
+                        {                        
+                            var oDatares = mybusiness.Appointments.Where(a => a.CustomerEmailAddress != "expired").Skip(skip).Take(top).ToList<BookingAppointment>();
+                            if (oDatares.Count > 0)
+                            {
+                                bookingAppointments.AddRange(oDatares);
+                                skip = skip + top;
+                                System.Threading.Thread.Sleep(1000);                                
+                            }
+                            else
+                            {
+                                endOfAppointments = true;
+                            }                                       
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine(e.InnerException.ToString());
+                        continue;
+                    }    
 
                     //Create Entities from BookingAppointment collection
                     //Update and Add Entities
                     //Send SMS for New and Changed Appointments
-                    foreach (var oDataAppointment in oDataAppointments)
+                    //foreach (var oDataAppointment in oDataAppointments)
+                    foreach (var oDataAppointment in bookingAppointments)
                     {
                         Appointment appointment = new Appointment
                         {
@@ -195,7 +270,20 @@ namespace Client
                     }
 
                     //Create a list of Cancelled Appointments (Appointments in database not occuring from the graphservice.business.appointments )
-                    List<string> odataIDs = oDataAppointments.Select(x => x.Id).ToList<string>();
+                    List<string> odataIDs;
+                    try
+                    {
+                       odataIDs = bookingAppointments.Select(x => x.Id).ToList<string>();
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"ExceptionCount: {exceptionCount}  , exception: {e.InnerException.ToString()}");
+                        exceptionCount++;
+                        continue;
+                    }
+
+
+
                     var deleteAppointments = from a in db.Appointment
                                                 where !odataIDs.Contains(a.Id) && a.Start > DateTime.Now
                                                 && a.appointmentIsActive == true
@@ -212,30 +300,52 @@ namespace Client
                         var bappoint = JsonConvert.DeserializeObject<BookingAppointment>(appoint.json);
                         bookingAppointmentList.Add(bappoint);
                     }
-                    db.SaveChanges();
+
+                    try
+                    {
+                        db.SaveChanges();
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine($"ExceptionCount: {exceptionCount}  , exception: {e.InnerException.ToString()}");
+                        exceptionCount++;
+                        continue;
+                    }
 
                     /* Send SMS for every Cancelled Appointments in the AppointmentList*/
                     SendSMS(viaNettSMS, _business, bookingAppointmentList, SMSTemplate.SMSCancellation);
                    
 
                     // Send Reminder SMS
-                    DateTime rm1Date = DateTime.Now.Add(SMSReminder1TimeSpanBefore);
-                    DateTime rm2Date = DateTime.Now.Add(SMSReminder2TimeSpanBefore);
-                    DateTime rm3Date = DateTime.Now.Add(SMSReminder3TimeSpanBefore);
+                    DateTime rm1DateTimeMax = DateTime.Now.Add(SMSReminder1TimeSpanBefore);
+                    DateTime rm2DateTimeMax = DateTime.Now.Add(SMSReminder2TimeSpanBefore);
+                    DateTime rm3DateTimeMax = DateTime.Now.Add(SMSReminder3TimeSpanBefore);
+                    DateTime rm1DateTimeMin = rm1DateTimeMax.AddHours(-2);
+                    DateTime rm2DateTimeMin = rm2DateTimeMax.AddHours(-2);
+                    DateTime rm3DateTimeMin = rm3DateTimeMax.AddHours(-2);
 
+
+
+                    // 3 Dager
                     var reminder1Appointments = from a in db.Appointment
                                                 where a.SMSLog.Where(s => s.smsTemplate == SMSTemplate.SMSReminder1.ToString() && s.smsIsSent == true).Count() < 1
-                                                && a.Start < rm1Date
+                                                && a.Start < rm1DateTimeMax
+                                                && a.Start > rm1DateTimeMin
+                                                && !( a.appointmentCreatedDate < rm1DateTimeMax && a.appointmentCreatedDate > rm1DateTimeMin)
                                                 select a;
-
+                    // 2 Dager
                     var reminder2Appointments = from a in db.Appointment
                                                 where a.SMSLog.Where(s => s.smsTemplate == SMSTemplate.SMSReminder2.ToString() && s.smsIsSent == true).Count() < 1
-                                                && a.Start < rm2Date
+                                                && a.Start < rm2DateTimeMax
+                                                && a.Start > rm2DateTimeMin
+                                                && !(a.appointmentCreatedDate < rm2DateTimeMax && a.appointmentCreatedDate > rm2DateTimeMin)
                                                 select a;
-
+                    // 1 Dag
                     var reminder3Appointments = from a in db.Appointment
                                                 where a.SMSLog.Where(s => s.smsTemplate == SMSTemplate.SMSReminder3.ToString() && s.smsIsSent == true).Count() < 1
-                                                && a.Start < rm3Date
+                                                && a.Start < rm3DateTimeMax
+                                                && a.Start > rm3DateTimeMin
+                                                && !(a.appointmentCreatedDate < rm3DateTimeMax && a.appointmentCreatedDate > rm3DateTimeMin)
                                                 select a;
 
                     List<BookingAppointment> reminder1List = new List<BookingAppointment>();
@@ -308,12 +418,6 @@ namespace Client
                     SendSMS(viaNettSMS, _business, reminder3List, SMSTemplate.SMSReminder3);
 
                 }
-
-
-
-
-
-                System.Threading.Thread.Sleep(60000);
 
             }
             // End While

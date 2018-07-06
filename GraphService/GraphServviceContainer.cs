@@ -13,7 +13,6 @@ namespace ConsoleApp4
     using Microsoft.OData.Edm;
     using Microsoft.OData;
 
-
     public partial class GraphService
     {
         /// <summary>

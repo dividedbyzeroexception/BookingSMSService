@@ -10,7 +10,7 @@ namespace ConsoleApp4
 
     using Microsoft.OData.Client;
 
-    public static class BookingsContainerExtensions
+    public static class GraphServiceExtensions
     {
         /// <summary>
         /// Creates a data object with change tracking
