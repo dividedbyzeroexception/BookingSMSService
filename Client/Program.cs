@@ -319,14 +319,14 @@ namespace Client
                     // Send Reminder SMS
                     DateTime rm1DateTimeMax = DateTime.Now.Add(SMSReminder1TimeSpanBefore);
                     DateTime rm2DateTimeMax = DateTime.Now.Add(SMSReminder2TimeSpanBefore);
-                    DateTime rm3DateTimeMax = DateTime.Now.Add(SMSReminder3TimeSpanBefore);
+                    //DateTime rm3DateTimeMax = DateTime.Now.Add(SMSReminder3TimeSpanBefore);
                     DateTime rm1DateTimeMin = rm1DateTimeMax.AddHours(-2);
                     DateTime rm2DateTimeMin = rm2DateTimeMax.AddHours(-2);
-                    DateTime rm3DateTimeMin = rm3DateTimeMax.AddHours(-2);
+                    //DateTime rm3DateTimeMin = rm3DateTimeMax.AddHours(-2);
 
 
 
-                    // 3 Dager
+                    // 7 Dager
                     var reminder1Appointments = from a in db.Appointment
                                                 where a.SMSLog.Where(s => s.smsTemplate == SMSTemplate.SMSReminder1.ToString() && s.smsIsSent == true).Count() < 1
                                                 && a.Start < rm1DateTimeMax
@@ -340,17 +340,17 @@ namespace Client
                                                 && a.Start > rm2DateTimeMin
                                                 && !(a.appointmentCreatedDate < rm2DateTimeMax && a.appointmentCreatedDate > rm2DateTimeMin)
                                                 select a;
-                    // 1 Dag
-                    var reminder3Appointments = from a in db.Appointment
-                                                where a.SMSLog.Where(s => s.smsTemplate == SMSTemplate.SMSReminder3.ToString() && s.smsIsSent == true).Count() < 1
-                                                && a.Start < rm3DateTimeMax
-                                                && a.Start > rm3DateTimeMin
-                                                && !(a.appointmentCreatedDate < rm3DateTimeMax && a.appointmentCreatedDate > rm3DateTimeMin)
-                                                select a;
+                    //// 1 Dag
+                    //var reminder3Appointments = from a in db.Appointment
+                    //                            where a.SMSLog.Where(s => s.smsTemplate == SMSTemplate.SMSReminder3.ToString() && s.smsIsSent == true).Count() < 1
+                    //                            && a.Start < rm3DateTimeMax
+                    //                            && a.Start > rm3DateTimeMin
+                    //                            && !(a.appointmentCreatedDate < rm3DateTimeMax && a.appointmentCreatedDate > rm3DateTimeMin)
+                    //                            select a;
 
                     List<BookingAppointment> reminder1List = new List<BookingAppointment>();
                     List<BookingAppointment> reminder2List = new List<BookingAppointment>();
-                    List<BookingAppointment> reminder3List = new List<BookingAppointment>();
+                    //List<BookingAppointment> reminder3List = new List<BookingAppointment>();
 
                     foreach (var item in reminder1Appointments)
                     {
@@ -392,30 +392,30 @@ namespace Client
                         );                    
                     }
 
-                    foreach (var item in reminder3Appointments)
-                    {
-                        reminder3List.Add(
-                             new BookingAppointment {
-                                 Id = item.Id
-                                ,CustomerName = item.customerName
-                                ,CustomerPhone = item.customerPhone
-                                ,ServiceName = item.serviceName
-                                ,Start = new DateTimeTimeZone { DateTime =  DateTime.Parse(item.Start.ToString()).ToUniversalTime().ToString("o"), TimeZone = "UTC" }
-                                ,CustomerEmailAddress = item.customerEmailAddress
-                                ,End = new DateTimeTimeZone { DateTime = DateTime.Parse(item.End.ToString()).ToUniversalTime().ToString("o"), TimeZone = "UTC" }
-                                ,Duration = new TimeSpan(1,0,0)
-                                ,ServiceLocation = new Location {
-                                     Address = new PhysicalAddress()
-                                    ,Coordinates = new OutlookGeoCoordinates()
-                                }
-                            }
-                        );                    
-                    }
+                    //foreach (var item in reminder3Appointments)
+                    //{
+                    //    reminder3List.Add(
+                    //         new BookingAppointment {
+                    //             Id = item.Id
+                    //            ,CustomerName = item.customerName
+                    //            ,CustomerPhone = item.customerPhone
+                    //            ,ServiceName = item.serviceName
+                    //            ,Start = new DateTimeTimeZone { DateTime =  DateTime.Parse(item.Start.ToString()).ToUniversalTime().ToString("o"), TimeZone = "UTC" }
+                    //            ,CustomerEmailAddress = item.customerEmailAddress
+                    //            ,End = new DateTimeTimeZone { DateTime = DateTime.Parse(item.End.ToString()).ToUniversalTime().ToString("o"), TimeZone = "UTC" }
+                    //            ,Duration = new TimeSpan(1,0,0)
+                    //            ,ServiceLocation = new Location {
+                    //                 Address = new PhysicalAddress()
+                    //                ,Coordinates = new OutlookGeoCoordinates()
+                    //            }
+                    //        }
+                    //    );                    
+                    //}
 
 
                     SendSMS(viaNettSMS, _business, reminder1List, SMSTemplate.SMSReminder1);
                     SendSMS(viaNettSMS, _business, reminder2List, SMSTemplate.SMSReminder2);
-                    SendSMS(viaNettSMS, _business, reminder3List, SMSTemplate.SMSReminder3);
+                    //SendSMS(viaNettSMS, _business, reminder3List, SMSTemplate.SMSReminder3);
 
                 }
 
