@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Net.Http;
 using System.Timers;
@@ -228,12 +229,17 @@ namespace Client
                     //foreach (var oDataAppointment in oDataAppointments)
                     foreach (var oDataAppointment in bookingAppointments)
                     {
+                        if (string.IsNullOrEmpty(oDataAppointment.CustomerId))
+                        {
+                            continue;
+                        }
+
                         Appointment appointment = new Appointment
                         {
                             customerEmailAddress = oDataAppointment.CustomerEmailAddress,
                             customerId = oDataAppointment.CustomerId,
                             customerName = oDataAppointment.CustomerName,
-                            customerPhone = oDataAppointment.CustomerPhone,
+                            customerPhone = Regex.Match(Regex.Replace(oDataAppointment.CustomerPhone, @"\D", ""), @"^\d{8}").Value,
                             customerNotes = oDataAppointment.CustomerNotes,
                             Id = oDataAppointment.Id,
                             staffMemberIds = oDataAppointment.StaffMemberIds.FirstOrDefault(),
@@ -246,6 +252,7 @@ namespace Client
                         };
 
 
+                        Debug.WriteLine(appointment.json);
 
                         List<BookingAppointment> _list = new List<BookingAppointment>();
                         _list.Add(oDataAppointment);
@@ -334,6 +341,7 @@ namespace Client
                                                 && a.Start < rm1DateTimeMax
                                                 && a.Start > rm1DateTimeMin
                                                 && !( a.appointmentCreatedDate < rm1DateTimeMax && a.appointmentCreatedDate > rm1DateTimeMin)
+                                                && !string.IsNullOrEmpty(a.customerId)
                                                 select a;
                     // 2 Dager
                     var reminder2Appointments = from a in db.Appointment
@@ -341,6 +349,7 @@ namespace Client
                                                 && a.Start < rm2DateTimeMax
                                                 && a.Start > rm2DateTimeMin
                                                 && !(a.appointmentCreatedDate < rm2DateTimeMax && a.appointmentCreatedDate > rm2DateTimeMin)
+                                                && !string.IsNullOrEmpty(a.customerId)
                                                 select a;
                     //// 1 Dag
                     //var reminder3Appointments = from a in db.Appointment
@@ -354,6 +363,7 @@ namespace Client
                     var surveyAppointments = from a in db.Appointment
                                                 where a.SMSLog.Where(s => s.smsTemplate == SMSTemplate.SMSSurvey.ToString() && s.smsIsSent == true).Count() < 1
                                                 && a.Start > surveyDateTimeMin
+                                                && !string.IsNullOrEmpty( a.customerId )
                                                 select a;
 
                     List<BookingAppointment> reminder1List = new List<BookingAppointment>();
@@ -450,9 +460,7 @@ namespace Client
                 }
 
             }
-            // End While
-
-            md5.Dispose();           
+            // End While       
 
         }
 

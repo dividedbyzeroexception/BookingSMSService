@@ -14,9 +14,9 @@
           <Property Name="End" Type="datetime2" Precision="7" />
           <Property Name="json" Type="nvarchar(max)" />
           <Property Name="md5" Type="nvarchar" MaxLength="50" />
-          <Property Name="customerName" Type="nvarchar" MaxLength="50" />
-          <Property Name="customerEmailAddress" Type="nvarchar" MaxLength="50" />
-          <Property Name="customerPhone" Type="nvarchar" MaxLength="20" />
+          <Property Name="customerName" Type="nvarchar" MaxLength="255" />
+          <Property Name="customerEmailAddress" Type="nvarchar" MaxLength="255" />
+          <Property Name="customerPhone" Type="nvarchar" MaxLength="255" />
           <Property Name="customerNotes" Type="nvarchar(max)" />
           <Property Name="serviceId" Type="nvarchar" MaxLength="36" />
           <Property Name="serviceName" Type="nvarchar" MaxLength="255" />
@@ -35,7 +35,7 @@
           <Property Name="smsTemplate" Type="nvarchar" MaxLength="50" />
           <Property Name="message" Type="nvarchar(max)" />
           <Property Name="appointmentId" Type="nvarchar" MaxLength="255" />
-          <Property Name="recipientPhone" Type="nvarchar" MaxLength="20" />
+          <Property Name="recipientPhone" Type="nvarchar" MaxLength="255" />
           <Property Name="repeatCount" Type="int" />
           <Property Name="serviceId" Type="nvarchar" MaxLength="255" />
           <Property Name="smsIsSent" Type="bit" />
@@ -65,18 +65,26 @@
     <!-- CSDL content -->
     <edmx:ConceptualModels>
       <Schema Namespace="BookingsModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+        <EntityContainer Name="BookingEntities" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="Appointment" EntityType="BookingsModel.Appointment" />
+          <EntitySet Name="SMSLog" EntityType="BookingsModel.SMSLog" />
+          <AssociationSet Name="FK_SMSLog_Appointment" Association="BookingsModel.FK_SMSLog_Appointment">
+            <End Role="Appointment" EntitySet="Appointment" />
+            <End Role="SMSLog" EntitySet="SMSLog" />
+          </AssociationSet>
+        </EntityContainer>
         <EntityType Name="Appointment">
           <Key>
             <PropertyRef Name="Id" />
           </Key>
-          <Property Name="Id" Type="String" MaxLength="255" FixedLength="false" Unicode="true" Nullable="false" />
+          <Property Name="Id" Type="String" Nullable="false" MaxLength="255" FixedLength="false" Unicode="true" />
           <Property Name="Start" Type="DateTime" Precision="7" />
           <Property Name="End" Type="DateTime" Precision="7" />
           <Property Name="json" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
           <Property Name="md5" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
-          <Property Name="customerName" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
-          <Property Name="customerEmailAddress" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
-          <Property Name="customerPhone" Type="String" MaxLength="20" FixedLength="false" Unicode="true" />
+          <Property Name="customerName" Type="String" MaxLength="255" FixedLength="false" Unicode="true" />
+          <Property Name="customerEmailAddress" Type="String" MaxLength="255" FixedLength="false" Unicode="true" />
+          <Property Name="customerPhone" Type="String" MaxLength="255" FixedLength="false" Unicode="true" />
           <Property Name="customerNotes" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
           <Property Name="serviceId" Type="String" MaxLength="36" FixedLength="false" Unicode="true" />
           <Property Name="serviceName" Type="String" MaxLength="255" FixedLength="false" Unicode="true" />
@@ -87,14 +95,6 @@
           <Property Name="appointmentCreatedDate" Type="DateTime" Nullable="false" Precision="7" />
           <NavigationProperty Name="SMSLog" Relationship="BookingsModel.FK_SMSLog_Appointment" FromRole="Appointment" ToRole="SMSLog" />
         </EntityType>
-        <EntityContainer Name="BookingEntities" annotation:LazyLoadingEnabled="true">
-          <EntitySet Name="Appointment" EntityType="Self.Appointment" />
-          <EntitySet Name="SMSLog" EntityType="BookingsModel.SMSLog" />
-          <AssociationSet Name="FK_SMSLog_Appointment" Association="BookingsModel.FK_SMSLog_Appointment">
-            <End Role="Appointment" EntitySet="Appointment" />
-            <End Role="SMSLog" EntitySet="SMSLog" />
-          </AssociationSet>
-        </EntityContainer>
         <EntityType Name="SMSLog">
           <Key>
             <PropertyRef Name="Id" />
@@ -104,7 +104,7 @@
           <Property Name="smsTemplate" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
           <Property Name="message" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
           <Property Name="appointmentId" Type="String" MaxLength="255" FixedLength="false" Unicode="true" />
-          <Property Name="recipientPhone" Type="String" MaxLength="20" FixedLength="false" Unicode="true" />
+          <Property Name="recipientPhone" Type="String" MaxLength="255" FixedLength="false" Unicode="true" />
           <Property Name="repeatCount" Type="Int32" />
           <Property Name="serviceId" Type="String" MaxLength="255" FixedLength="false" Unicode="true" />
           <Property Name="smsIsSent" Type="Boolean" />
@@ -135,19 +135,19 @@
                 <ScalarProperty Name="appointmentCreatedDate" ColumnName="appointmentCreatedDate" />
                 <ScalarProperty Name="appointmentChangedDate" ColumnName="appointmentChangedDate" />
                 <ScalarProperty Name="appointmentIsActive" ColumnName="appointmentIsActive" />
-                <ScalarProperty Name="Id" ColumnName="Id" />
-                <ScalarProperty Name="Start" ColumnName="Start" />
-                <ScalarProperty Name="End" ColumnName="End" />
-                <ScalarProperty Name="json" ColumnName="json" />
-                <ScalarProperty Name="md5" ColumnName="md5" />
-                <ScalarProperty Name="customerName" ColumnName="customerName" />
-                <ScalarProperty Name="customerEmailAddress" ColumnName="customerEmailAddress" />
-                <ScalarProperty Name="customerPhone" ColumnName="customerPhone" />
-                <ScalarProperty Name="customerNotes" ColumnName="customerNotes" />
-                <ScalarProperty Name="serviceId" ColumnName="serviceId" />
-                <ScalarProperty Name="serviceName" ColumnName="serviceName" />
-                <ScalarProperty Name="staffMemberIds" ColumnName="staffMemberIds" />
                 <ScalarProperty Name="customerId" ColumnName="customerId" />
+                <ScalarProperty Name="staffMemberIds" ColumnName="staffMemberIds" />
+                <ScalarProperty Name="serviceName" ColumnName="serviceName" />
+                <ScalarProperty Name="serviceId" ColumnName="serviceId" />
+                <ScalarProperty Name="customerNotes" ColumnName="customerNotes" />
+                <ScalarProperty Name="customerPhone" ColumnName="customerPhone" />
+                <ScalarProperty Name="customerEmailAddress" ColumnName="customerEmailAddress" />
+                <ScalarProperty Name="customerName" ColumnName="customerName" />
+                <ScalarProperty Name="md5" ColumnName="md5" />
+                <ScalarProperty Name="json" ColumnName="json" />
+                <ScalarProperty Name="End" ColumnName="End" />
+                <ScalarProperty Name="Start" ColumnName="Start" />
+                <ScalarProperty Name="Id" ColumnName="Id" />
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>

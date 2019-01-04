@@ -108,14 +108,12 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>BookingModel.edmx</DependentUpon>
     </Compile>
-    <Compile Include="Models\Appointment.cs" />
-    <Compile Include="Models\SMSLog.cs" />
-    <Compile Include="Struct\ExcludeTest.cs" />
-    <Compile Include="Program.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SMSLog.cs">
       <DependentUpon>BookingModel.tt</DependentUpon>
     </Compile>
+    <Compile Include="Struct\ExcludeTest.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SMSService.cs" />
     <Compile Include="Struct\Structs.cs" />
   </ItemGroup>
@@ -155,13 +153,6 @@
       <DependentUpon>BookingModel.edmx</DependentUpon>
       <LastGenOutput>BookingModel.cs</LastGenOutput>
     </Content>
-    <Content Include="Bookings.mdf">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Bookings_log.ldf">
-      <DependentUpon>Bookings.mdf</DependentUpon>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
   </ItemGroup>
   <ItemGroup>
     <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
@@ -171,6 +162,9 @@
       <Project>{c70649a4-729d-4f67-8274-bb111180f8c8}</Project>
       <Name>ServicegraphLib</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Models\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
