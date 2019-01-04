@@ -33,6 +33,8 @@ namespace Client
         private static TimeSpan SMSReminder1TimeSpanBefore = TimeSpan.Parse(ConfigurationManager.AppSettings["SMSReminder1TimeSpanBefore"]);
         private static TimeSpan SMSReminder2TimeSpanBefore = TimeSpan.Parse(ConfigurationManager.AppSettings["SMSReminder2TimeSpanBefore"]);
         private static TimeSpan SMSReminder3TimeSpanBefore = TimeSpan.Parse(ConfigurationManager.AppSettings["SMSReminder3TimeSpanBefore"]);
+        private static TimeSpan SMSSurveyTimeSpanBefore = TimeSpan.Parse(ConfigurationManager.AppSettings["SMSSurveyTimeSpanBefore"]);
+
 
         private static string _SMSSenderFrom =          ConfigurationManager.AppSettings["SMSSenderFrom"];
         private static string _SMSServiceUserName =     ConfigurationManager.AppSettings["SMSServiceUserName"];
@@ -323,7 +325,7 @@ namespace Client
                     DateTime rm1DateTimeMin = rm1DateTimeMax.AddHours(-2);
                     DateTime rm2DateTimeMin = rm2DateTimeMax.AddHours(-2);
                     //DateTime rm3DateTimeMin = rm3DateTimeMax.AddHours(-2);
-
+                    DateTime surveyDateTimeMin = DateTime.Now.Add(SMSSurveyTimeSpanBefore);
 
 
                     // 7 Dager
@@ -348,8 +350,15 @@ namespace Client
                     //                            && !(a.appointmentCreatedDate < rm3DateTimeMax && a.appointmentCreatedDate > rm3DateTimeMin)
                     //                            select a;
 
+
+                    var surveyAppointments = from a in db.Appointment
+                                                where a.SMSLog.Where(s => s.smsTemplate == SMSTemplate.SMSSurvey.ToString() && s.smsIsSent == true).Count() < 1
+                                                && a.Start > surveyDateTimeMin
+                                                select a;
+
                     List<BookingAppointment> reminder1List = new List<BookingAppointment>();
                     List<BookingAppointment> reminder2List = new List<BookingAppointment>();
+                    List<BookingAppointment> surveyList = new List<BookingAppointment>();
                     //List<BookingAppointment> reminder3List = new List<BookingAppointment>();
 
                     foreach (var item in reminder1Appointments)
@@ -392,6 +401,26 @@ namespace Client
                         );                    
                     }
 
+                    foreach (var item in surveyAppointments)
+                    {
+                        surveyList.Add(
+                             new BookingAppointment {
+                                 Id = item.Id
+                                ,CustomerName = item.customerName
+                                ,CustomerPhone = item.customerPhone
+                                ,ServiceName = item.serviceName
+                                ,Start = new DateTimeTimeZone { DateTime =  DateTime.Parse(item.Start.ToString()).ToUniversalTime().ToString("o"), TimeZone = "UTC" }
+                                ,CustomerEmailAddress = item.customerEmailAddress
+                                ,End = new DateTimeTimeZone { DateTime = DateTime.Parse(item.End.ToString()).ToUniversalTime().ToString("o"), TimeZone = "UTC" }
+                                ,Duration = new TimeSpan(1,0,0)
+                                ,ServiceLocation = new Location {
+                                     Address = new PhysicalAddress()
+                                    ,Coordinates = new OutlookGeoCoordinates()
+                                }
+                            }
+                        );                    
+                    }
+
                     //foreach (var item in reminder3Appointments)
                     //{
                     //    reminder3List.Add(
@@ -415,6 +444,7 @@ namespace Client
 
                     SendSMS(viaNettSMS, _business, reminder1List, SMSTemplate.SMSReminder1);
                     SendSMS(viaNettSMS, _business, reminder2List, SMSTemplate.SMSReminder2);
+                    SendSMS(viaNettSMS, _business, surveyList, SMSTemplate.SMSSurvey);
                     //SendSMS(viaNettSMS, _business, reminder3List, SMSTemplate.SMSReminder3);
 
                 }

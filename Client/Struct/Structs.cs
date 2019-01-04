@@ -13,7 +13,8 @@ namespace Client.Struct
         SMSReminder3,
         SMSCancellation,
         SMSConfirmation,
-        SMSUpdate
+        SMSUpdate,
+        SMSSurvey
     }
 
 }
