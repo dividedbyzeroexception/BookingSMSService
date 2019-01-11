@@ -111,7 +111,7 @@ namespace Client
             }
 
             //Sett denne til max
-            graphService.MaxPageSize = 20;
+            graphService.MaxPageSize = 100;
                 
             var mybusiness = graphService.BookingBusinesses.ByKey(_BookingBusinessesID);
 
@@ -121,18 +121,7 @@ namespace Client
                 .FirstOrDefault();
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+            
             MD5 md5 = MD5.Create();
             // db = new BookingEntities();
             /*
@@ -142,8 +131,7 @@ namespace Client
             int exceptionCount = 0;
 
             while (true)
-            {
-                System.Threading.Thread.Sleep(60000);
+            {              
 
                 using (var db = new BookingEntities())
                 {
@@ -153,11 +141,10 @@ namespace Client
                     //Retrieve BookingAppointments from graphservice
                     //var oDataAppointments = mybusiness.Appointments.ToArray().Where(a => System.DateTime.Parse(a.Start.DateTime) >= DateTime.Now);
 
-
                     try
                     {
                         var oldAppointments = mybusiness.Appointments
-                                        .Where(a => a.CustomerEmailAddress != "expired").ToArray()
+                                        .Where(a => a.InvoiceStatus != BookingInvoiceStatus.Canceled).ToArray()
                                             .Where(a => System.DateTime.Parse(a.Start.DateTime) < DateTime.Now);
 
 
@@ -166,7 +153,7 @@ namespace Client
                             Console.WriteLine($"{ item.Start.DateTime }");
                             var itemSingle = graphService.BookingBusinesses.ByKey(_BookingBusinessesID).Appointments.ByKey(item.Id);
                             var _item = itemSingle.PatchEntityWithChangeTracking();
-                            _item.CustomerEmailAddress = "expired";
+                            _item.InvoiceStatus =  BookingInvoiceStatus.Canceled;
                             graphService.UpdateObject(_item);
                             graphService.SaveChanges(SaveChangesOptions.PostOnlySetProperties);
                         }
@@ -204,7 +191,7 @@ namespace Client
                         int top = 3;
                         while (!endOfAppointments)
                         {                        
-                            var oDatares = mybusiness.Appointments.Where(a => a.CustomerEmailAddress != "expired").Skip(skip).Take(top).ToList<BookingAppointment>();
+                            var oDatares = mybusiness.Appointments.Where(a => a.InvoiceStatus != BookingInvoiceStatus.Canceled).Skip(skip).Take(top).ToList<BookingAppointment>();
                             if (oDatares.Count > 0)
                             {
                                 bookingAppointments.AddRange(oDatares);
@@ -214,7 +201,8 @@ namespace Client
                             else
                             {
                                 endOfAppointments = true;
-                            }                                       
+                            }
+                            
                         }
                     }
                     catch (Exception e)
@@ -248,14 +236,17 @@ namespace Client
                             serviceId = oDataAppointment.ServiceId,
                             serviceName = oDataAppointment.ServiceName.ToLower(),
                             json = JsonConvert.SerializeObject(oDataAppointment),
-                            md5 = Convert.ToBase64String(md5.ComputeHash(Encoding.UTF8.GetBytes(oDataAppointment.Id + oDataAppointment.Start.DateTime.ToString() + oDataAppointment.End.DateTime.ToString())))
+                            md5 = Convert.ToBase64String(md5.ComputeHash(Encoding.UTF8.GetBytes(oDataAppointment.Id + oDataAppointment.Start.DateTime.ToString() + oDataAppointment.End.DateTime.ToString()))),
+                            md5hash = md5.ComputeHash(Encoding.Unicode.GetBytes(oDataAppointment.Id))
                         };
 
 
                         Debug.WriteLine(appointment.json);
 
-                        List<BookingAppointment> _list = new List<BookingAppointment>();
-                        _list.Add(oDataAppointment);
+                        List<BookingAppointment> _list = new List<BookingAppointment>
+                        {
+                            oDataAppointment
+                        };
 
                         switch (InsertOrUpdate(appointment, db))
                         {
@@ -279,10 +270,10 @@ namespace Client
                     }
 
                     //Create a list of Cancelled Appointments (Appointments in database not occuring from the graphservice.business.appointments )
-                    List<string> odataIDs;
+                    List<byte[]> odataIDs;
                     try
                     {
-                       odataIDs = bookingAppointments.Select(x => x.Id).ToList<string>();
+                       odataIDs = bookingAppointments.Select(x => md5.ComputeHash(Encoding.Unicode.GetBytes(x.Id))).ToList<byte[]>();
                     }
                     catch (Exception e)
                     {
@@ -294,7 +285,7 @@ namespace Client
 
 
                     var deleteAppointments = from a in db.Appointment
-                                                where !odataIDs.Contains(a.Id) && a.Start > DateTime.Now
+                                                where !odataIDs.Contains(a.md5hash) && a.Start > DateTime.Now
                                                 && a.appointmentIsActive == true
                                                 select a;
 
@@ -457,8 +448,10 @@ namespace Client
                     SendSMS(viaNettSMS, _business, surveyList, SMSTemplate.SMSSurvey);
                     //SendSMS(viaNettSMS, _business, reminder3List, SMSTemplate.SMSReminder3);
 
+                    
                 }
 
+                System.Threading.Thread.Sleep(60000);
             }
             // End While       
 
@@ -466,6 +459,8 @@ namespace Client
 
         private static void SendSMS(ViaNettSMS viaNettSMS, BookingBusiness _business, IEnumerable<BookingAppointment> _appointments, SMSTemplate sMSTemplate)
         {
+            MD5 md5 = MD5.Create();
+
             foreach (BookingAppointment appointment in _appointments)
             {
                 // Send SMS to Customer
@@ -480,7 +475,7 @@ namespace Client
                 try
                 {
                     // Send SMS through HTTP API
-                    Console.WriteLine("SendingSMS: {0} {1} {2}", _SMSSenderFrom, appointment.CustomerPhone, message);
+                    Console.WriteLine("{0} SendingSMS: {1} {2} {3}", Date.Now.ToString(), _SMSSenderFrom, appointment.CustomerPhone, message);
                     result = viaNettSMS.SendSMS(_SMSSenderFrom, appointment.CustomerPhone, message);
                     //result = viaNettSMS.SendSMS(_SMSSenderFrom, "40453626", message);
 
@@ -499,7 +494,8 @@ namespace Client
                                ,sentDate = DateTime.Now
                                ,smsIsSent = true
                                ,sentResult = "OK"
-                               ,smsTemplate = sMSTemplate.ToString()                                
+                               ,smsTemplate = sMSTemplate.ToString()
+                               ,md5hash = md5.ComputeHash(Encoding.Unicode.GetBytes(appointment.Id))
                             });
                             context.SaveChanges();
                         }                       
@@ -515,8 +511,8 @@ namespace Client
                                ,sentDate = DateTime.Now
                                ,smsIsSent = false
                                ,sentResult = $"Received error: {result.ErrorCode} {result.ErrorMessage}"
-                               ,smsTemplate = sMSTemplate.ToString()                           
-                                
+                               ,smsTemplate = sMSTemplate.ToString()
+                               ,md5hash = md5.ComputeHash(Encoding.Unicode.GetBytes(appointment.Id))
                             });
                             context.SaveChanges();
                         }
@@ -529,6 +525,7 @@ namespace Client
                     Debug.WriteLine(ex.Message);
                 }
             }
+            md5.Dispose();
         }
 
         private static string RenderSMSTemplate(BookingBusiness _business, BookingAppointment appointment, string _appointmentDateString, SMSTemplate sMSTemplate)
@@ -576,8 +573,7 @@ namespace Client
         public static EntityState InsertOrUpdate(Appointment appointment, BookingEntities db)
         {
 
-            if (db.Appointment.Any(a => a.Id == appointment.Id) &&
-                db.Appointment.Any(a => a.md5 == appointment.md5))
+            if (db.Appointment.Where(a => a.md5hash == appointment.md5hash).Where(a => a.md5 == appointment.md5).Count() > 0)
             {
                 //db.Appointment.Attach(appointment);
                 //db.Entry(appointment).State = EntityState.Unchanged;
@@ -586,9 +582,11 @@ namespace Client
                 return EntityState.Unchanged;
             }
             else
-            if (db.Appointment.Any(a => a.Id == appointment.Id) &&
-                db.Appointment.Any(a => a.md5 != appointment.md5))
-            {
+            //if (db.Appointment.Any(a => a.Id == appointment.Id)  && 
+            //    db.Appointment.Any(a => a.md5 != appointment.md5))
+            //{
+            if (db.Appointment.Where(a => a.md5hash == appointment.md5hash).Where(a => a.md5 != appointment.md5).Count() > 0)
+            { 
                 appointment.appointmentChangedDate = DateTime.Now;
                 db.Appointment.Attach(appointment);
                 db.Entry(appointment).State = EntityState.Modified;
@@ -597,7 +595,6 @@ namespace Client
             }
             else
             {
-                appointment.appointmentCreatedDate = DateTime.Now;
                 appointment.appointmentCreatedDate = DateTime.Now;
                 appointment.appointmentIsActive = true;
                 db.Appointment.Attach(appointment);

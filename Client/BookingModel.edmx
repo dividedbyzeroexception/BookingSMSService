@@ -7,7 +7,7 @@
     <Schema Namespace="BookingsModel.Store" Provider="System.Data.SqlClient" ProviderManifestToken="2012" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
         <EntityType Name="Appointment">
           <Key>
-            <PropertyRef Name="Id" />
+            <PropertyRef Name="md5hash" />
           </Key>
           <Property Name="Id" Type="nvarchar" MaxLength="255" Nullable="false" />
           <Property Name="Start" Type="datetime2" Precision="7" />
@@ -25,6 +25,7 @@
           <Property Name="appointmentIsActive" Type="bit" Nullable="false" />
           <Property Name="appointmentChangedDate" Type="datetime2" Precision="7" Nullable="false" />
           <Property Name="appointmentCreatedDate" Type="datetime2" Precision="7" Nullable="false" />
+          <Property Name="md5hash" Type="varbinary" MaxLength="50" Nullable="false" />
         </EntityType>
         <EntityType Name="SMSLog">
           <Key>
@@ -40,16 +41,17 @@
           <Property Name="serviceId" Type="nvarchar" MaxLength="255" />
           <Property Name="smsIsSent" Type="bit" />
           <Property Name="sentResult" Type="nvarchar" MaxLength="255" />
+          <Property Name="md5hash" Type="varbinary" MaxLength="50" Nullable="false" />
         </EntityType>
         <Association Name="FK_SMSLog_Appointment">
-          <End Role="Appointment" Type="Self.Appointment" Multiplicity="0..1" />
+          <End Role="Appointment" Type="Self.Appointment" Multiplicity="1" />
           <End Role="SMSLog" Type="Self.SMSLog" Multiplicity="*" />
           <ReferentialConstraint>
             <Principal Role="Appointment">
-              <PropertyRef Name="Id" />
+              <PropertyRef Name="md5hash" />
             </Principal>
             <Dependent Role="SMSLog">
-              <PropertyRef Name="appointmentId" />
+              <PropertyRef Name="md5hash" />
             </Dependent>
           </ReferentialConstraint>
         </Association>
@@ -75,7 +77,7 @@
         </EntityContainer>
         <EntityType Name="Appointment">
           <Key>
-            <PropertyRef Name="Id" />
+            <PropertyRef Name="md5hash" />
           </Key>
           <Property Name="Id" Type="String" Nullable="false" MaxLength="255" FixedLength="false" Unicode="true" />
           <Property Name="Start" Type="DateTime" Precision="7" />
@@ -93,6 +95,7 @@
           <Property Name="appointmentIsActive" Type="Boolean" Nullable="false" />
           <Property Name="appointmentChangedDate" Type="DateTime" Nullable="false" Precision="7" />
           <Property Name="appointmentCreatedDate" Type="DateTime" Nullable="false" Precision="7" />
+          <Property Name="md5hash" Type="Binary" Nullable="false" MaxLength="50" FixedLength="false" />
           <NavigationProperty Name="SMSLog" Relationship="BookingsModel.FK_SMSLog_Appointment" FromRole="Appointment" ToRole="SMSLog" />
         </EntityType>
         <EntityType Name="SMSLog">
@@ -109,21 +112,22 @@
           <Property Name="serviceId" Type="String" MaxLength="255" FixedLength="false" Unicode="true" />
           <Property Name="smsIsSent" Type="Boolean" />
           <Property Name="sentResult" Type="String" MaxLength="255" FixedLength="false" Unicode="true" />
+          <Property Name="md5hash" Type="Binary" Nullable="false" MaxLength="50" FixedLength="false" />
           <NavigationProperty Name="Appointment" Relationship="BookingsModel.FK_SMSLog_Appointment" FromRole="SMSLog" ToRole="Appointment" />
         </EntityType>
         <Association Name="FK_SMSLog_Appointment">
-          <End Type="BookingsModel.Appointment" Role="Appointment" Multiplicity="0..1" />
+          <End Type="BookingsModel.Appointment" Role="Appointment" Multiplicity="1" />
           <End Type="BookingsModel.SMSLog" Role="SMSLog" Multiplicity="*" />
           <ReferentialConstraint>
             <Principal Role="Appointment">
-              <PropertyRef Name="Id" />
+              <PropertyRef Name="md5hash" />
             </Principal>
             <Dependent Role="SMSLog">
-              <PropertyRef Name="appointmentId" />
+              <PropertyRef Name="md5hash" />
             </Dependent>
           </ReferentialConstraint>
         </Association>
-      </Schema>
+        </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
     <edmx:Mappings>
@@ -132,6 +136,7 @@
           <EntitySetMapping Name="Appointment">
             <EntityTypeMapping TypeName="BookingsModel.Appointment">
               <MappingFragment StoreEntitySet="Appointment">
+                <ScalarProperty Name="md5hash" ColumnName="md5hash" />
                 <ScalarProperty Name="appointmentCreatedDate" ColumnName="appointmentCreatedDate" />
                 <ScalarProperty Name="appointmentChangedDate" ColumnName="appointmentChangedDate" />
                 <ScalarProperty Name="appointmentIsActive" ColumnName="appointmentIsActive" />
@@ -154,6 +159,7 @@
           <EntitySetMapping Name="SMSLog">
             <EntityTypeMapping TypeName="BookingsModel.SMSLog">
               <MappingFragment StoreEntitySet="SMSLog">
+                <ScalarProperty Name="md5hash" ColumnName="md5hash" />
                 <ScalarProperty Name="sentResult" ColumnName="sentResult" />
                 <ScalarProperty Name="smsIsSent" ColumnName="smsIsSent" />
                 <ScalarProperty Name="serviceId" ColumnName="serviceId" />

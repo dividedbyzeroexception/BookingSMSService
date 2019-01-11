@@ -24,6 +24,7 @@ namespace Client
         public string serviceId { get; set; }
         public Nullable<bool> smsIsSent { get; set; }
         public string sentResult { get; set; }
+        public byte[] md5hash { get; set; }
     
         public virtual Appointment Appointment { get; set; }
     }

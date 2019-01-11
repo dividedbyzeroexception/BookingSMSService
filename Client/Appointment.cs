@@ -36,6 +36,7 @@ namespace Client
         public bool appointmentIsActive { get; set; }
         public System.DateTime appointmentChangedDate { get; set; }
         public System.DateTime appointmentCreatedDate { get; set; }
+        public byte[] md5hash { get; set; }
     
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<SMSLog> SMSLog { get; set; }
