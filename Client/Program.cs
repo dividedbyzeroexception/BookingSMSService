@@ -227,7 +227,7 @@ namespace Client
                             customerEmailAddress = oDataAppointment.CustomerEmailAddress,
                             customerId = oDataAppointment.CustomerId,
                             customerName = oDataAppointment.CustomerName,
-                            customerPhone = Regex.Replace(oDataAppointment.CustomerPhone, @"[^\d+]", ""),
+                            customerPhone = Regex.Replace(oDataAppointment.CustomerPhone ?? "", @"[^\d+]", ""),
                             customerNotes = oDataAppointment.CustomerNotes,
                             Id = oDataAppointment.Id,
                             staffMemberIds = oDataAppointment.StaffMemberIds.FirstOrDefault(),
