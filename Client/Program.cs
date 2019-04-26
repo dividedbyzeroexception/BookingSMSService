@@ -335,6 +335,7 @@ namespace Client
                                                 && a.Start > rm1DateTimeMin
                                                 && !( a.appointmentCreatedDate < rm1DateTimeMax && a.appointmentCreatedDate > rm1DateTimeMin)
                                                 && !string.IsNullOrEmpty(a.customerId)
+                                                && !string.IsNullOrEmpty(a.customerPhone)
                                                 && a.appointmentIsActive == true
                                                 select a;
                     // 2 Dager
@@ -344,6 +345,7 @@ namespace Client
                                                 && a.Start > rm2DateTimeMin
                                                 && !(a.appointmentCreatedDate < rm2DateTimeMax && a.appointmentCreatedDate > rm2DateTimeMin)
                                                 && !string.IsNullOrEmpty(a.customerId)
+                                                && !string.IsNullOrEmpty(a.customerPhone)
                                                 && a.appointmentIsActive == true
                                                 select a;
                     //// 1 Dag
@@ -359,7 +361,8 @@ namespace Client
                                                 where a.SMSLog.Where(s => s.smsTemplate == SMSTemplate.SMSSurvey.ToString() && s.smsIsSent == true).Count() < 1
                                                 && a.Start < surveyDateTimeMin
                                                 && !string.IsNullOrEmpty( a.customerId )
-                                                && a.appointmentIsActive == true
+                                                && !string.IsNullOrEmpty(a.customerPhone)
+                                                && a.appointmentIsActive == true                                                
                                                 select a;
 
                     List<BookingAppointment> reminder1List = new List<BookingAppointment>();
